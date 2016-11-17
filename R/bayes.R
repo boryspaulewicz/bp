@@ -63,9 +63,16 @@ robust.mixed = function(fixed, random, d,
     }
     fit = stan(paste(path.package('bp'), model.path, sep = '/'), data = data,
                chains = chains, pars = pars, ...)
-    ## Zeby mozna bylo latwo przemianowac bety
-    attr(fit, 'fixed.effects') = colnames(X)
-    fit
+    ## Zwracamy próbki z czytelnymi nazwami parametrów
+    s = as.data.frame(extract(fit))
+    names(s)[rmatch('beta', names(s))] = colnames(X)
+    names(s)[rmatch('ranef_sigma', names(s))] = paste(colnames(Z), 'SD')
+    ranef_names = apply(expand.grid(unique(as.character(d[[as.character(random[2])]])), colnames(Z)), 1, function(x)paste(x, collapse = '.'))
+    ## names(ranef_names) = names(s)[rmatch('ranef.', names(s))]
+    if('ranef' %in% pars)names(s)[rmatch('ranef.', names(s))] = ranef_names
+    stan.sum = rstan::summary(fit)$summary
+    ## rownames(stan.sum) = names(s) ## nazwy efektów losowych w summary są w innej kolejności
+    list(s = s, summary = stan.sum, ranef = ranef_names, fixef = colnames(X))
 }
 
 #' Test funkcji robust.mixed.logistic
