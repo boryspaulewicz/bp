@@ -71,6 +71,7 @@ robust.mixed = function(fixed, random, d,
     ## names(ranef_names) = names(s)[rmatch('ranef.', names(s))]
     if('ranef' %in% pars)names(s)[rmatch('ranef.', names(s))] = ranef_names
     stan.sum = rstan::summary(fit)$summary
+    stan.sum = stan.sum[!rmatch('y_new', rownames(stan.sum)),]
     ## rownames(stan.sum) = names(s) ## nazwy efektów losowych w summary są w innej kolejności
     list(s = s, summary = stan.sum, ranef = ranef_names, fixef = colnames(X))
 }

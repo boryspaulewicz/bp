@@ -8,6 +8,7 @@ print(summary(m), corr = F)
 
 fit = robust.mixed(Reaction ~ Days, Subject ~ Days, sleepstudy, beta_sigma = 1000, family = 'normal',
                    pars = c('ranef', 'y_new'))
+
 round(fit$summary, 2) ## Rhat = 1, n_eff ok
 
 ## Bardzo podobne współczynniki efektów ustalonych
@@ -21,7 +22,7 @@ ranef.2 = data.frame(x = ranef(m)$Subject[,2], y = apply(fit$s[, paste(unique(sl
 lm(y ~ x, ranef.1)
 lm(y ~ x, ranef.2)
 ## Nachylenia bliskie 1, ale widać odstające przypadki
-ggplot(ranef.1, aes(x, y)) + geom_point() + geom_smooth(method = 'lm') + geom_text(nudge_y = 1, size = 1.5, aes(label = unique(sleepstudy$Subject))) 
+ggplot(ranef.1, aes(x, y)) + geom_point() + geom_smooth(method = 'lm') + geom_text(nudge_y = 1, size = 1.5, aes(label = unique(sleepstudy$Subject)))
 ## 308, 332, 335, 352
 ggplot(ranef.2, aes(x, y)) + geom_point() + geom_smooth(method = 'lm') + geom_text(nudge_y = 1, size = 1.5, aes(label = unique(sleepstudy$Subject)))
 ## 332, 352, 308
@@ -36,12 +37,12 @@ round(data.frame(lmer = as.numeric(tbl[,3]), robust = apply(fit$s[,fit$fixef], 2
 ## Większa wariancja efektów losowych z bayesa, korelacja z odwrotnym
 ## znakiem (sic!), ale jest "nieistotna"
 round(apply(fit$s, 2, mean)[c(3:4, 6)], 2)
-## (Intercept) SD        Days SD          C.2.1 
-##          27.93           6.04          -0.11 
+## (Intercept) SD        Days SD          C.2.1
+##          27.93           6.04          -0.11
 ##
 ## Random effects:
 ##  Groups   Name        Std.Dev. Corr
-##  Subject  (Intercept) 24.740       
+##  Subject  (Intercept) 24.740
 ##           Days         5.922   0.07
 
 ## Dopasowanie na podstawie posteriora predykcyjnego
@@ -54,6 +55,7 @@ ggplot(cbind(sleepstudy, y_new), aes(x = Days, y = Reaction)) + geom_point() +
 
 ######################################################################
 ## Robit
+
 df = expand.grid(id = 1:40, trial = 1, x = 0:1)
 df$gr = 1
 df$gr[df$id > 20] = 2
@@ -65,13 +67,14 @@ for(i in 1:nrow(df))df$acc[i] = rbinom(1, size = df$n[i], binomial()$linkinv(c(-
                                                                              (df$gr[i] + x.eff[df$id[i]]) * df$x[i]))
 df$gr = as.factor(df$gr)
 fit = robust.mixed(acc ~ -1 + gr / x, id ~ x, df, family = 'binomial',
-                   y_nu = 100, ranef_nu = 100)
+                   pars = 'y_new', y_nu = 100, ranef_nu = 100)
 
 round(fit$summary, 2)
 
 ## Współczynniki bardzo podobne, tak samo niedoszacowuje sd nachyleń
 ## losowych (!?)
-m <- glmer(cbind(acc,n-acc) ~ -1 + gr / x + (x|id), df, family = 'binomial')
+m <- glmer(cbind(acc,n-acc) ~ -1 + gr / x + (x|id), df, pars = '',
+           family = 'binomial')
 round(rbind(coef(summary(m))[fit$fixef, 1],
             apply(fit$s[,fit$fixef], 2, mean)), 3)
 
