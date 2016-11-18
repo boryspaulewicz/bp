@@ -74,35 +74,3 @@ robust.mixed = function(fixed, random, d,
     ## rownames(stan.sum) = names(s) ## nazwy efektów losowych w summary są w innej kolejności
     list(s = s, summary = stan.sum, ranef = ranef_names, fixef = colnames(X))
 }
-
-#' Test funkcji robust.mixed.logistic
-#' @export
-test.robust.mixed.logistic = function(){
-    require(lme4)
-    df = expand.grid(id = 1:40, trial = 1, x = 0:1)
-    df$gr = 1
-    df$gr[df$id > 20] = 2
-    df$n = 20
-    df$acc = NA
-    x.eff = rnorm(max(df$id), sd = 1)
-    x.eff = x.eff - mean(x.eff)
-    intercept.eff = rnorm(max(df$id), sd = 0.5)
-    intercept.eff = intercept.eff - mean(intercept.eff)
-    for(i in 1:nrow(df))df$acc[i] = rbinom(1, size = df$n[i], binomial()$linkinv(c(-.8, .8)[df$gr[i]] + intercept.eff[df$id[i]] +
-                                                                        (df$gr[i] + x.eff[df$id[i]]) * df$x[i]))
-    df$gr = as.factor(df$gr)
-    fit = robust.mixed.logistic(acc ~ -1 + gr / x, id ~ x, df,
-        y_nu = 100, ranef_nu = 100)
-    sm = round(summary(fit)$summary, 3)
-    ## Porównujemy współczynniki dostarczone przez glmer i te bayesowskie
-    round(rbind(coef(summary(glmer(cbind(acc,n-acc) ~ -1 + gr / x + (x|id), df, family = 'binomial')))[1:4, 1],
-                sm[1:4, 'mean']), 3)
-    ## Porównujemy błędy standardowe do sd posteriorów
-    round(coef(summary(glmer(cbind(acc,n-acc) ~ -1 + as.factor(gr) / x + (x|id), df, family = 'binomial')))[1:4, 2] /
-              sm[1:4, 'sd'], 1)
-    ## W symulacjach niepewność była wyższa w przypadku odpornego
-    ## modelu bayesowskiego gdy nu = 4, a gdy nu = 100 (czyli
-    ## zakładamy w przybliżeniu model prawdziwy), była praktycznie
-    ## taka sama.
-    fit
-}
