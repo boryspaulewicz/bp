@@ -28,9 +28,11 @@
 #'     standardowe, albo oczekiwane prawdopodobieństwa dla punktów
 #'     przecięcia są skrajne, domyślna wartość może być
 #'     nieodpowiednia.
-#' @return Wynik próbkowania zwrócony przez funkcję stan z dodanym
-#'     atrybutem fixed.effects, zawierającym nazwy kolumn macierzy
-#'     modelu.
+#' @param family (='binomial') Rozkład zmiennej zależnej: binomial
+#'     oznacza odporną regresję logistyczną, normal oznacza odporny
+#'     model liniowy.
+#' @return Lista złożona z elementów s: ramka próbek,
+#'     summary: podsumowanie wyników STAN'a.
 #' @export
 robust.mixed = function(fixed, random, d,
                         y_nu = 4, y_sigma = 1.548435, ranef_nu = 4, beta_sigma = 20,
