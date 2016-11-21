@@ -6,7 +6,7 @@
 \usage{
 robust.mixed(fixed, random, d, y_nu = 4, y_sigma = 1.548435, ranef_nu = 4,
   beta_sigma = 20, chains = parallel::detectCores(), pars = NULL,
-  family = "binomial", ...)
+  family = "binomial", return.stanfit = F, ...)
 }
 \arguments{
 \item{fixed}{Formuła modelu dla efektów ustalonych.}
@@ -40,11 +40,17 @@ rdzeni.}
 \item{pars}{Wektor tekstowy nazw parametrów, dla których chcemy
 próbki, poza beta, ranef_sigma i C. Może zawierać 'y_new'
 (posterior predykcyjny) i 'ranef' (efekty losowe).}
+
+\item{family}{(='binomial') Rozkład zmiennej zależnej: binomial
+oznacza odporną regresję logistyczną, normal oznacza odporny
+model liniowy.}
+
+\item{return.stanfit}{(=F) Czy zwracać obiekt zwracany przez Stana,
+czy listę z ramką z próbkami i summary}
 }
 \value{
-Wynik próbkowania zwrócony przez funkcję stan z dodanym
-    atrybutem fixed.effects, zawierającym nazwy kolumn macierzy
-    modelu.
+Obiekt zwracany przez rstan lub lista złożona z elementów
+    s: ramka próbek, summary: podsumowanie wyników STAN'a.
 }
 \description{
 Implementacja modelu jest oparta na publikacji Sorensen'a,

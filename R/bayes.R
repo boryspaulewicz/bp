@@ -31,12 +31,15 @@
 #' @param family (='binomial') Rozkład zmiennej zależnej: binomial
 #'     oznacza odporną regresję logistyczną, normal oznacza odporny
 #'     model liniowy.
-#' @return Lista złożona z elementów s: ramka próbek,
-#'     summary: podsumowanie wyników STAN'a.
+#' @param return.stanfit (=F) Czy zwracać obiekt zwracany przez Stana,
+#'     czy listę z ramką z próbkami i summary
+#' @return Obiekt zwracany przez rstan lub lista złożona z elementów
+#'     s: ramka próbek, summary: podsumowanie wyników STAN'a.
 #' @export
 robust.mixed = function(fixed, random, d,
                         y_nu = 4, y_sigma = 1.548435, ranef_nu = 4, beta_sigma = 20,
-                        chains = parallel::detectCores(), pars = NULL, family = 'binomial', ...){
+                        chains = parallel::detectCores(), pars = NULL, family = 'binomial',
+                        return.stanfit = F, ...){
     require(rstan)
     if(family == 'binomial'){
         if(!('n' %in% names(d)))stop("Number of observations per data point variable (n) missing")
@@ -65,15 +68,19 @@ robust.mixed = function(fixed, random, d,
     }
     fit = stan(paste(path.package('bp'), model.path, sep = '/'), data = data,
                chains = chains, pars = pars, ...)
-    ## Zwracamy próbki z czytelnymi nazwami parametrów
-    s = as.data.frame(extract(fit))
-    names(s)[rmatch('beta', names(s))] = colnames(X)
-    names(s)[rmatch('ranef_sigma', names(s))] = paste(colnames(Z), 'SD')
-    ranef_names = apply(expand.grid(unique(as.character(d[[as.character(random[2])]])), colnames(Z)), 1, function(x)paste(x, collapse = '.'))
-    ## names(ranef_names) = names(s)[rmatch('ranef.', names(s))]
-    if('ranef' %in% pars)names(s)[rmatch('ranef.', names(s))] = ranef_names
-    stan.sum = rstan::summary(fit)$summary
-    stan.sum = stan.sum[!rmatch('y_new', rownames(stan.sum)),]
-    ## rownames(stan.sum) = names(s) ## nazwy efektów losowych w summary są w innej kolejności
-    list(s = s, summary = stan.sum, ranef = ranef_names, fixef = colnames(X))
+    if(!return.stanfit){
+        ## Zwracamy próbki z czytelnymi nazwami parametrów
+        s = as.data.frame(extract(fit))
+        names(s)[rmatch('beta', names(s))] = colnames(X)
+        names(s)[rmatch('ranef_sigma', names(s))] = paste(colnames(Z), 'SD')
+        ranef_names = apply(expand.grid(unique(as.character(d[[as.character(random[2])]])), colnames(Z)), 1, function(x)paste(x, collapse = '.'))
+        ## names(ranef_names) = names(s)[rmatch('ranef.', names(s))]
+        if('ranef' %in% pars)names(s)[rmatch('ranef.', names(s))] = ranef_names
+        stan.sum = rstan::summary(fit)$summary
+        stan.sum = stan.sum[!rmatch('y_new', rownames(stan.sum)),]
+        ## rownames(stan.sum) = names(s) ## nazwy efektów losowych w summary są w innej kolejności
+        list(s = s, summary = stan.sum, ranef = ranef_names, fixef = colnames(X))
+    }else{
+        fit
+    }
 }
