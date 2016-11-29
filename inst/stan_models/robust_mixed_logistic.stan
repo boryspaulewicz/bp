@@ -19,11 +19,13 @@ data{
   int<lower=1, upper=I> id[N];
   int<lower=0> y[N];
   // Efekty losowe
-  real<lower=1> ranef_nu; // Liczba stopni swobody rozk³adu efektów losowych, domy¶lnie 4
+  // real<lower=1> ranef_nu; // Liczba stopni swobody rozk³adu efektów losowych, domy¶lnie 4
+  real<lower=0> ranef_nu_rate; // parametr prioru exp dla nu efektów losowych
   // Prior dla efektów ustalonych
   real<lower=0> beta_sigma; // domy¶lnie 20, dla stdandardyzowanych predyktorów mo¿na 5
   // Parametry rozk³adu t dla obserwacji
-  real<lower=1> y_nu; // domy¶lnie 4
+  // real<lower=1> y_nu; // domy¶lnie 4
+  real<lower=0> residuals_nu_rate; // parametr prioru exp dla nu reszt
   real<lower=0> y_sigma; // Domy¶lnie 1.548435, ¿eby wspó³czynniki odpowiada³y probitowi
   // Liczba obserwacji na punkt danych
   //#1
@@ -33,8 +35,10 @@ data{
 
 parameters{
   vector[D] beta; // Efekty ustalone
+  real<lower=1> y_nu;
   vector<lower=0>[R] ranef_sigma; // sd efektów losowych
-  // Parametryzacja efektów losowych
+  real<lower=1>[R] ranef_nu; // nu efektów losowych
+  // Parametryzacja skorelowanych efektów losowych
   cholesky_factor_corr[R] L;
   vector[R] z_ranef[I];
   vector<lower=0>[I] u_ranef;

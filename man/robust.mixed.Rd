@@ -4,9 +4,10 @@
 \alias{robust.mixed}
 \title{Dopasowuje odporny mieszany model liniowy lub logistyczny}
 \usage{
-robust.mixed(fixed, random, d, y_nu = 4, y_sigma = 1.548435, ranef_nu = 4,
-  beta_sigma = 20, chains = parallel::detectCores(), pars = NULL,
-  family = "binomial", return.stanfit = F, ...)
+robust.mixed(fixed, random, d, y_nu = 4, y_sigma = 1.548435,
+  beta_sigma = 20, y_nu_rate = 1/29, ranef_nu_rate = 1/29,
+  chains = parallel::detectCores(), pars = NULL, family = "binomial",
+  return.stanfit = F, ...)
 }
 \arguments{
 \item{fixed}{Formuła modelu dla efektów ustalonych.}
@@ -24,9 +25,6 @@ Odchylenie standardowe rozkładu t modelującego zmienną
 zależną. To jest wartość arbitralna - domyślnie przyjęto
 wartość dającą współczynniki porównywalne do zwykłej regresji
 logistycznej.}
-
-\item{ranef_nu}{Liczba stopni swobody rozkładu t modelującego
-rozkład efektów losowych.}
 
 \item{beta_sigma}{Odchylenie standardowe prioru dla efektów
 ustalonych. UWAGA Jeżeli predyktory mają bardzo małe odchylenie
@@ -47,6 +45,9 @@ model liniowy.}
 
 \item{return.stanfit}{(=F) Czy zwracać obiekt zwracany przez Stana,
 czy listę z ramką z próbkami i summary}
+
+\item{ranef_nu}{Liczba stopni swobody rozkładu t modelującego
+rozkład efektów losowych.}
 }
 \value{
 Obiekt zwracany przez rstan lub lista złożona z elementów

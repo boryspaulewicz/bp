@@ -37,7 +37,8 @@
 #'     s: ramka próbek, summary: podsumowanie wyników STAN'a.
 #' @export
 robust.mixed = function(fixed, random, d,
-                        y_nu = 4, y_sigma = 1.548435, ranef_nu = 4, beta_sigma = 20,
+                        y_nu = 4, y_sigma = 1.548435,
+                        beta_sigma = 20, y_nu_rate = 1/29, ranef_nu_rate = 1/29,
                         chains = parallel::detectCores(), pars = NULL, family = 'binomial',
                         return.stanfit = F, ...){
     require(rstan)
@@ -49,10 +50,10 @@ robust.mixed = function(fixed, random, d,
         if(beta_sigma == 20)warning('SD of normal prior for beta = 20 in the linear model')
         model.path = 'stan_models/robust_mixed_linear.stan'
     }
-    pars = c('beta', 'ranef_sigma', 'C', pars)
-    if(!all(pars %in% c('beta', 'ranef_sigma', 'C', 'ranef', 'y_new'))){
+    if(!all(pars %in% c('ranef', 'y_new'))){
         error('Podano niewłaściwe nazwy dodatkowych parametrów: dopuszczalne wartości to \'ranef\' i \'y_new\'.')
     }
+    pars = c(c('beta', 'ranef_sigma', 'y_nu', 'ranef_nu', 'C'), pars)
     rstan_options(auto_write = TRUE)
     options(mc.cores = parallel::detectCores())
     id = as.numeric(as.factor(as.character(d[[as.character(random[2])]])))
@@ -61,7 +62,9 @@ robust.mixed = function(fixed, random, d,
     Z = model.matrix(random, d)
     data = list(D = ncol(X), R = ncol(Z), N = nrow(X), I = max(id),
                 X = X, Z = Z, y = y, id = id,
-                y_nu = y_nu, ranef_nu = ranef_nu, beta_sigma = beta_sigma)
+                beta_sigma = beta_sigma,
+                residuals_nu_rate = residuals_nu_rate,
+                ranef_nu_rate = ranef_nu_rate)
     if(family == 'binomial'){
         data$n = d$n
         data$y_sigma = y_sigma
@@ -96,8 +99,8 @@ robust.mixed = function(fixed, random, d,
 #' @export
 find_guessers = function(score, n, guessing_prob = .5, n.chains = parallel::detectCores() - 1, sample = 20000,
                          ...){
-    ##TODO: eff dla samych prób wybranych ze względu na is_guessing,
-    ##dodać wygodną funkcję diagnostyczną, poprawić inits
+    ## TODO: eff dla samych prób wybranych ze względu na is_guessing,
+    ## dodać wygodną funkcję diagnostyczną
     d = list(score = score,
              N = length(score),
              n = n,
@@ -118,8 +121,10 @@ find_guessers = function(score, n, guessing_prob = .5, n.chains = parallel::dete
     '
     fit = runjags::run.jags(model, c('mu', 'sigma', 'not_guessing_prob', 'is_guessing'), d,
                             n.chains = n.chains, sample = sample,
-                            ## inits = list(mu = runif(n.chains, binomial()$linkfun(.6), binomial()$linkfun(.9)),
-                            ##              sigma = runif(n.chains, .1, 2)),
+                            inits = function(chain)list(mu = runif(1, binomial()$linkfun(.6), binomial()$linkfun(.9)),
+                                                        sigma = runif(1, .001, 2.2),
+                                                        is_guessing = rbinom(length(score), 1, .5)),
+                            modules = 'glm',
                             ...)
     s = as.data.frame(as.matrix(coda::as.mcmc.list(fit)))
     ## Zwracamy predykcje posterioryczne
