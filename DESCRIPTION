@@ -4,7 +4,7 @@ Version: 0.0.0.9000
 Authors@R: person("Boryslaw", "Paulewicz", email = "borys.paulewicz@gmail.com", role = c("aut", "cre"))
 Description: Rozmaitosci.
 Depends: R (>= 3.2.2)
-Imports: rstan,lme4,parallel
+Imports: rstan,lme4,parallel,runjags,coda
 License: GPL-3
 Encoding: UTF-8
 LazyData: true
