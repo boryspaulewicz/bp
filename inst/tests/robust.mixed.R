@@ -3,13 +3,14 @@ library(lme4)
 library(ggplot2)
 data(sleepstudy)
 
-m <- lmer(Reaction ~ Days + (Days|Subject), sleepstudy)
-print(summary(m), corr = F)
-
 fit = robust.mixed(Reaction ~ Days, Subject ~ Days, sleepstudy, beta_sigma = 1000, family = 'normal',
                    pars = c('ranef', 'y_new'))
 
-round(fit$summary, 2) ## Rhat = 1, n_eff ok
+## Rhat should be <= 1.01, neff >= 1000 for 95% CI
+round(fit$summary, 2)
+
+m <- lmer(Reaction ~ Days + (Days|Subject), sleepstudy)
+print(summary(m), corr = F)
 
 ## Bardzo podobne współczynniki efektów ustalonych
 round(data.frame(lmer = fixef(m), robust = apply(fit$s[,fit$fixef], 2, mean)), 2)
@@ -59,24 +60,29 @@ ggplot(cbind(sleepstudy, y_new), aes(x = Days, y = Reaction)) + geom_point() +
 df = expand.grid(id = 1:40, trial = 1, x = 0:1)
 df$gr = 1
 df$gr[df$id > 20] = 2
-df$n = 20
 df$acc = NA
 x.eff = ct(rnorm(max(df$id), sd = 1))
 intercept.eff = ct(rnorm(max(df$id), sd = 0.5))
-for(i in 1:nrow(df))df$acc[i] = rbinom(1, size = df$n[i], binomial()$linkinv(c(-.8, .8)[df$gr[i]] + intercept.eff[df$id[i]] +
+n = 20
+for(i in 1:nrow(df))df$acc[i] = rbinom(1, size = n, binomial()$linkinv(c(-.5, .5)[df$gr[i]] + intercept.eff[df$id[i]] +
                                                                              (df$gr[i] + x.eff[df$id[i]]) * df$x[i]))
 df$gr = as.factor(df$gr)
-fit = robust.mixed(acc ~ -1 + gr / x, id ~ x, df, family = 'binomial',
-                   pars = 'y_new', y_nu = 100, ranef_nu = 100)
 
+## nu = 30, żeby przybliżyć zwykłą mieszaną regresję logistyczną
+fit = robust.mixed(acc ~ -1 + gr / x, id ~ x, df, n = 20, family = 'binomial',
+                   pars = 'y_new', y_nu = 30, ranef_nu = 30)
+
+## Rhat <= 1.01, neff >= 1000 for 95% CI
 round(fit$summary, 2)
 
-## Współczynniki bardzo podobne, tak samo niedoszacowuje sd nachyleń
-## losowych (!?)
-m <- glmer(cbind(acc,n-acc) ~ -1 + gr / x + (x|id), df, pars = '',
-           family = 'binomial')
-round(rbind(coef(summary(m))[fit$fixef, 1],
-            apply(fit$s[,fit$fixef], 2, mean)), 3)
+## Porównujemy efekty ustalone z wartościami prawdziwymi
+round(rbind(apply(fit$s[,fit$fixef], 2, mean), c(-.5, .5, 1, 2)), 2)
 
-## Błędy standardowe bardzo podobne
-coef(summary(m))[fit$fixef, 2] / apply(fit$s[,fit$fixef], 2, sd)
+## Współczynniki bardzo podobne
+m <- glmer(cbind(acc,n-acc) ~ -1 + gr / x + (x|id), df, family = 'binomial')
+round(rbind(coef(summary(m))[fit$fixef, 1],
+            apply(fit$s[,fit$fixef], 2, mean)), 2)
+
+## Błędy standardowe bardzo podobne, zwykle chyba nieco szersze z
+## robita.
+round(coef(summary(m))[fit$fixef, 2] / apply(fit$s[,fit$fixef], 2, sd), 2)

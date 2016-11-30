@@ -4,10 +4,9 @@
 \alias{robust.mixed}
 \title{Dopasowuje odporny mieszany model liniowy lub logistyczny}
 \usage{
-robust.mixed(fixed, random, d, y_nu = 4, y_sigma = 1.548435,
-  beta_sigma = 20, y_nu_rate = 1/29, ranef_nu_rate = 1/29,
-  chains = parallel::detectCores(), pars = NULL, family = "binomial",
-  return.stanfit = F, ...)
+robust.mixed(fixed, random, d, n = NULL, y_nu = 4, y_sigma = 1.548435,
+  beta_sigma = NULL, ranef_nu = 4, chains = parallel::detectCores() - 1,
+  pars = NULL, family = "binomial", return.stanfit = F, ...)
 }
 \arguments{
 \item{fixed}{Formuła modelu dla efektów ustalonych.}
@@ -16,6 +15,8 @@ robust.mixed(fixed, random, d, y_nu = 4, y_sigma = 1.548435,
 x2 ...}
 
 \item{d}{Zbiór danych.}
+
+\item{n}{Liczba obserwacji na punkt danych (robit)}
 
 \item{y_nu}{Liczba stopni swobody rozkładu t modelującego zmienną
 zależną.}
@@ -32,6 +33,9 @@ standardowe, albo oczekiwane prawdopodobieństwa dla punktów
 przecięcia są skrajne, domyślna wartość może być
 nieodpowiednia.}
 
+\item{ranef_nu}{Liczba stopni swobody rozkładu t modelującego
+rozkład efektów losowych.}
+
 \item{chains}{Liczba równoległych próbników - domyślnie liczba
 rdzeni.}
 
@@ -45,9 +49,6 @@ model liniowy.}
 
 \item{return.stanfit}{(=F) Czy zwracać obiekt zwracany przez Stana,
 czy listę z ramką z próbkami i summary}
-
-\item{ranef_nu}{Liczba stopni swobody rozkładu t modelującego
-rozkład efektów losowych.}
 }
 \value{
 Obiekt zwracany przez rstan lub lista złożona z elementów

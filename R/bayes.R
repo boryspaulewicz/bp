@@ -9,6 +9,7 @@
 #' @param random Formuła modelu dla efektów losowych, postaci g ~ x1 +
 #'     x2 ...
 #' @param d Zbiór danych.
+#' @param n Liczba obserwacji na punkt danych (robit)
 #' @param chains Liczba równoległych próbników - domyślnie liczba
 #'     rdzeni.
 #' @param pars Wektor tekstowy nazw parametrów, dla których chcemy
@@ -36,24 +37,30 @@
 #' @return Obiekt zwracany przez rstan lub lista złożona z elementów
 #'     s: ramka próbek, summary: podsumowanie wyników STAN'a.
 #' @export
-robust.mixed = function(fixed, random, d,
+robust.mixed = function(fixed, random, d, n = NULL,
                         y_nu = 4, y_sigma = 1.548435,
-                        beta_sigma = 20, y_nu_rate = 1/29, ranef_nu_rate = 1/29,
-                        chains = parallel::detectCores(), pars = NULL, family = 'binomial',
+                        beta_sigma = NULL, ranef_nu = 4,
+                        chains = parallel::detectCores() - 1,
+                        pars = NULL, family = 'binomial',
                         return.stanfit = F, ...){
     require(rstan)
     if(family == 'binomial'){
-        if(!('n' %in% names(d)))stop("Number of observations per data point variable (n) missing")
+        if(is.null(n))stop("Number of observations per data point (n) missing.")
         model.path = 'stan_models/robust_mixed_logistic.stan'
+        if(is.null(beta_sigma)){
+            warning('Using defaulf SD=20 for fixed effects priors. This could be inappropriate for unstandardized predictors.')
+            beta_sigma = 20
+        }
     }
     if(family == 'normal'){
         if(beta_sigma == 20)warning('SD of normal prior for beta = 20 in the linear model')
+        if(is.null(beta_sigma))stop('beta_sigma (SD of fixed effects priors) not set')
         model.path = 'stan_models/robust_mixed_linear.stan'
     }
     if(!all(pars %in% c('ranef', 'y_new'))){
-        error('Podano niewłaściwe nazwy dodatkowych parametrów: dopuszczalne wartości to \'ranef\' i \'y_new\'.')
+        error('Wrong parameter names. Valid values are \'ranef\' and \'y_new\'.')
     }
-    pars = c(c('beta', 'ranef_sigma', 'y_nu', 'ranef_nu', 'C'), pars)
+    pars = c(c('beta', 'ranef_sigma', 'C'), pars)
     rstan_options(auto_write = TRUE)
     options(mc.cores = parallel::detectCores())
     id = as.numeric(as.factor(as.character(d[[as.character(random[2])]])))
@@ -62,10 +69,10 @@ robust.mixed = function(fixed, random, d,
     Z = model.matrix(random, d)
     data = list(D = ncol(X), R = ncol(Z), N = nrow(X), I = max(id),
                 X = X, Z = Z, y = y, id = id,
-                beta_sigma = beta_sigma,
-                residuals_nu_rate = residuals_nu_rate,
-                ranef_nu_rate = ranef_nu_rate)
+                y_nu = y_nu, ranef_nu = ranef_nu,
+                beta_sigma = beta_sigma)
     if(family == 'binomial'){
+        d$n = n ## Zapewnia odpowiednią długość, gdy n to skalar
         data$n = d$n
         data$y_sigma = y_sigma
     }
@@ -151,7 +158,7 @@ find_guessers = function(score, n, guessing_prob = .5, n.chains = parallel::dete
 #' @param fit Obiekt zwracany przez find_guessers
 #' @export
 plot_guessers = function(fit){
-    fit$pred$is_guessing = c('no', 'yes')[as.numeric(fit$pred$is_guessing > .5) + 1]
-    ggplot2::ggplot(fit$pred, aes(x = i, y = acc)) +
+    fit$pred$is_guessing = c('Above chance', 'Chance')[as.numeric(fit$pred$is_guessing > .5) + 1]
+    ggplot2::ggplot(fit$pred, aes(x = i, y = acc)) + ylab('Accuracy') +
         ggplot2::geom_point() + ggplot2::geom_errorbar(aes(ymin = lo, ymax = hi)) + facet_wrap(~is_guessing)
 }
