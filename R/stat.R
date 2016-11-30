@@ -140,30 +140,3 @@ contrast.matrix = function(m, rnd = 2, draw.stars = TRUE, fun = I){
   }
   list(tbl = res, sig = sigtbl)
 }
-
-#' Przybliżone przedziały ufności dla proporcji
-#'
-#' Rozkład normalny może być kiepskim przybliżeniem przedziałów
-#' ufności (w wikipedii jest odnośnik do artykułu opisującego kiedy ta
-#' reguła nie działa). Generalnie proporcja nie może być zbyt blisko 0
-#' ani 1. Istnieje wiele innych metod liczenia interwałów, wiki sporo
-#' o tym mówi.
-#' @param fits Wektor wartości oczekiwanych (prawdopodobieństw)
-#' @param n Wektor wielkości prób
-#' @param alpha 1 - prawdopodobieństwo pokrycia
-#' @export
-binomial.pred.ci = function(fits, n, alpha = .05){
-  if(sum(n * fits <= 5 | n * (1 - fits) <= 5) != 0){
-    warning("Rule of thumb for normal approximation violated, using Wilson score interval")
-    z = qnorm(1-alpha/2)
-    est = (fits + z^2/(2*n)) / (1 + z^2 / n)
-    ci.hi = z * sqrt(fits * (1 - fits) / n + z^2 / (4 * n^2)) / (1 + z^2 / n)
-    ci.lo = -1 * ci.hi
-    ci.lo = est + ci.lo - fits
-    ci.hi = est + ci.hi - fits
-  }else{
-    ci.hi = qnorm(1-alpha/2) * sqrt((fits*(1-fits))/n)
-    ci.lo = -1 * ci.hi
-  }
-  data.frame(ci.hi = ci.hi, ci.lo = ci.lo, fits = fits, n = n)
-}
