@@ -32,7 +32,7 @@
 #' @param family (='binomial') Rozkład zmiennej zależnej: binomial
 #'     oznacza odporną regresję logistyczną, normal oznacza odporny
 #'     model liniowy.
-#' @param return.stanfit (=F) Czy zwracać obiekt zwracany przez Stana,
+#' @param return_stanfit (=F) Czy zwracać obiekt zwracany przez Stana,
 #'     czy listę z ramką z próbkami i summary
 #' @return Obiekt zwracany przez rstan lub lista złożona z elementów
 #'     s: ramka próbek, summary: podsumowanie wyników STAN'a.
@@ -42,7 +42,7 @@ robust.mixed = function(fixed, random, d, n = NULL,
                         beta_sigma = NULL, ranef_nu = 4,
                         chains = parallel::detectCores() - 1,
                         pars = NULL, family = 'binomial',
-                        return.stanfit = F, ...){
+                        return_stanfit = F, ...){
     require(rstan)
     if(family == 'binomial'){
         if(is.null(n))stop("Number of observations per data point (n) missing.")
@@ -78,7 +78,7 @@ robust.mixed = function(fixed, random, d, n = NULL,
     }
     fit = stan(paste(path.package('bp'), model.path, sep = '/'), data = data,
                chains = chains, pars = pars, ...)
-    if(!return.stanfit){
+    if(!return_stanfit){
         ## Zwracamy próbki z czytelnymi nazwami parametrów
         s = as.data.frame(extract(fit))
         names(s)[rmatch('beta', names(s))] = colnames(X)

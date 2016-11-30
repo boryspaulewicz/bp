@@ -5,7 +5,7 @@
 \title{Funkcja zwracająca ładną prostą tabelkę z gwiazdkami dla modelu
 liniowego}
 \usage{
-lms(..., digits = 3, return.table = FALSE)
+lms(..., digits = 3, return_table = FALSE)
 }
 \description{
 Funkcja zwracająca ładną prostą tabelkę z gwiazdkami dla modelu

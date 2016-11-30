@@ -6,7 +6,7 @@
 \usage{
 robust.mixed(fixed, random, d, n = NULL, y_nu = 4, y_sigma = 1.548435,
   beta_sigma = NULL, ranef_nu = 4, chains = parallel::detectCores() - 1,
-  pars = NULL, family = "binomial", return.stanfit = F, ...)
+  pars = NULL, family = "binomial", return_stanfit = F, ...)
 }
 \arguments{
 \item{fixed}{Formuła modelu dla efektów ustalonych.}
@@ -47,7 +47,7 @@ próbki, poza beta, ranef_sigma i C. Może zawierać 'y_new'
 oznacza odporną regresję logistyczną, normal oznacza odporny
 model liniowy.}
 
-\item{return.stanfit}{(=F) Czy zwracać obiekt zwracany przez Stana,
+\item{return_stanfit}{(=F) Czy zwracać obiekt zwracany przez Stana,
 czy listę z ramką z próbkami i summary}
 }
 \value{

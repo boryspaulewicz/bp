@@ -8,7 +8,7 @@
 #' @param f Czynnik, który ma oddzielać podzbiory danych do obliczania punktów ROC.
 #' @return Ramka z kolumnami f, resp (przekodowane oceny), hi i fa.
 #' @export
-roc.points = function(stim, dec, rating, max.rating = max(rating), f = 1){
+roc_points = function(stim, dec, rating, max.rating = max(rating), f = 1){
     resp = NA
     resp[dec == 0] = max.rating - rating[dec == 0] + 1
     resp[dec == 1] = rating[dec == 1] + max.rating

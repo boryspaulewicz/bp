@@ -7,7 +7,7 @@
 #' TRUE. Drukuje tabelkę z istotnościami na wyjściu, jeżeli show ==
 #' TRUE.
 #' @export
-lmer.sig = function(m, return = FALSE, short = FALSE, show = TRUE){
+lmer_sig = function(m, return = FALSE, short = FALSE, show = TRUE){
   ms = summary(m)
   ## fef = as.data.frame(ms@coefs)
   fef = as.data.frame(coef(ms))
@@ -87,7 +87,7 @@ lmer.sig = function(m, return = FALSE, short = FALSE, show = TRUE){
 #' Funkcja zwracająca ładną prostą tabelkę z gwiazdkami dla modelu
 #' liniowego
 #' @export
-lms = function(..., digits = 3, return.table = FALSE){
+lms = function(..., digits = 3, return_table = FALSE){
   sm = summary(lm(...))
   ## tylko coef, se i p
   res = as.data.frame(round(sm$coef,digits)[,c(1,2,4)])
@@ -101,7 +101,7 @@ lms = function(..., digits = 3, return.table = FALSE){
             'n = ', sum(sm$df[1:2]),
             'błąd std. reszt =', round(sqrt(sum((sm$residuals - mean(sm$residuals))^2)/sm$df[2]),digits),
             '\n'))
-  if(return.table)res
+  if(return_table)res
 }
 
 #' Oblicza macierz kontrastów dla tabelki (summary) modelu
@@ -111,7 +111,7 @@ lms = function(..., digits = 3, return.table = FALSE){
 #' geometryczną ich błędów standardowych jako błąd standardowy
 #' różnicy.
 #' @export
-contrast.matrix = function(m, rnd = 2, draw.stars = TRUE, fun = I){
+contrast_matrix = function(m, rnd = 2, draw_stars = TRUE, fun = I){
   m = as.data.frame(m)
   nms = rownames(m)
   res = sigtbl = matrix(nrow = nrow(m), ncol = nrow(m))
@@ -127,7 +127,7 @@ contrast.matrix = function(m, rnd = 2, draw.stars = TRUE, fun = I){
     stars[sig < 0.001] = '***'
     ## W ten sposób można np. zastosować inv.logit na interceptach
     val = round(fun(m[n,1]) - fun(m[,1]), rnd)
-    if(draw.stars){
+    if(draw_stars){
       res[,n] = paste(val, stars)
     }else{
       res[,n] = paste(val, 'p = ', round(sig, 3))
