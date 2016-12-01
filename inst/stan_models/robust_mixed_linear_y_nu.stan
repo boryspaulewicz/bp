@@ -22,16 +22,17 @@ data{
   //@
   int<lower=1> I;
   int<lower=1, upper=I> id[N];
-  // Parametry rozk³adu t dla obserwacji
-  real<lower=1> y_nu; // domy¶lnie 4
   // Efekty losowe
   real<lower=1> ranef_nu; // domy¶lnie 4
   // Prior dla efektów ustalonych, du¿a liczba
-  real[D] beta_mu;
-  real<lower=0>[D] beta_sigma;
+  real beta_mu[D];
+  real<lower=0> beta_sigma[D];
+  // Parametryzacja prioru dla nu funkcji ³±cz±cej
+  real<lower=0> y_nu_rate;
 }
 
 parameters{
+  real<lower=1> y_nu;
   vector[D] beta;
   real<lower=0> y_sigma;
   vector<lower=0>[R] ranef_sigma;
@@ -42,10 +43,12 @@ parameters{
 }
 
 transformed parameters{
+  real<lower=0> y_nu_minus_one;
   vector[R] ranef[I];
   // Macierz korelacji
   matrix[R, R] C;
   vector[N] fit;
+  y_nu_minus_one = y_nu - 1;
   for(i in 1:I){
     // Efekty losowe maj± rozk³ad t ze ¶redni± 0
     ranef[i] = sqrt(ranef_nu / u_ranef[i]) * diag_pre_multiply(ranef_sigma, L) * z_ranef[i];
@@ -62,6 +65,7 @@ model{
   for(i in 1:D){
     beta[i] ~ normal(beta_mu[i], beta_sigma[i]);
   }
+  y_nu_minus_one ~ exponential(y_nu_rate);
   L ~ lkj_corr_cholesky(2.0); 
   for(i in 1:I){
     z_ranef[i] ~ normal(0, 1);
