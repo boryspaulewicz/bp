@@ -37,7 +37,7 @@
 #' @return Obiekt zwracany przez rstan lub lista złożona z elementów
 #'     s: ramka próbek, summary: podsumowanie wyników STAN'a.
 #' @export
-robust.mixed = function(fixed, random, d, n = NULL,
+robust_mixed = function(fixed, random, d, n = NULL,
                         y_nu = 4, y_sigma = 1.548435,
                         beta_sigma = NULL, ranef_nu = 4,
                         chains = parallel::detectCores() - 1,

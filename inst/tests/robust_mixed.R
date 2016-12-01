@@ -3,7 +3,7 @@ library(lme4)
 library(ggplot2)
 data(sleepstudy)
 
-fit = robust.mixed(Reaction ~ Days, Subject ~ Days, sleepstudy, beta_sigma = 1000, family = 'normal',
+fit = robust_mixed(Reaction ~ Days, Subject ~ Days, sleepstudy, beta_sigma = 1000, family = 'normal',
                    pars = c('ranef', 'y_new'))
 
 ## Rhat should be <= 1.01, neff >= 1000 for 95% CI
@@ -29,7 +29,7 @@ ggplot(ranef.2, aes(x, y)) + geom_point() + geom_smooth(method = 'lm') + geom_te
 ## 332, 352, 308
 
 ## Większy poziom niepewności z bayesa
-tbl = lmer.sig(m, T)
+tbl = lmer_sig(m, T)
 round(data.frame(lmer = as.numeric(tbl[,3]), robust = apply(fit$s[,fit$fixef], 2, sd)), 2)
 ##             lmer robust
 ## (Intercept) 6.82   8.10
@@ -69,7 +69,7 @@ for(i in 1:nrow(df))df$acc[i] = rbinom(1, size = n, binomial()$linkinv(c(-.5, .5
 df$gr = as.factor(df$gr)
 
 ## nu = 30, żeby przybliżyć zwykłą mieszaną regresję logistyczną
-fit = robust.mixed(acc ~ -1 + gr / x, id ~ x, df, n = 20, family = 'binomial',
+fit = robust_mixed(acc ~ -1 + gr / x, id ~ x, df, n = 20, family = 'binomial',
                    pars = 'y_new', y_nu = 30, ranef_nu = 30)
 
 ## Rhat <= 1.01, neff >= 1000 for 95% CI
@@ -83,6 +83,5 @@ m <- glmer(cbind(acc,n-acc) ~ -1 + gr / x + (x|id), df, family = 'binomial')
 round(rbind(coef(summary(m))[fit$fixef, 1],
             apply(fit$s[,fit$fixef], 2, mean)), 2)
 
-## Błędy standardowe bardzo podobne, zwykle chyba nieco szersze z
-## robita.
+## Błędy standardowe bardzo podobne
 round(coef(summary(m))[fit$fixef, 2] / apply(fit$s[,fit$fixef], 2, sd), 2)
