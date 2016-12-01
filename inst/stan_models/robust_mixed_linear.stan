@@ -2,7 +2,11 @@
 // losowym i efektami losowymi o wielowymiarowym rozk³adzie
 // t. Wielowymiarowy rozk³ad t zaimplementowany wed³ug opisu z
 // Wikipedii, wielowymiarowy normalny zamodelowany wed³ug artyku³u o
-// modelach mieszanych w Stan-ie.
+// modelach mieszanych w Stan-ie (Manuskrypt jest w podkatalogu
+// stan_models).
+
+// Fragmenty modelu zawarte pomiêdzy znacznikami //# i //@ s±
+// specyficzne dla rozk³adu zmiennej zale¿nej (t, dwumianowy)
 
 data{
   // Macierz efektów ustalonych
@@ -13,7 +17,9 @@ data{
   // poziomów czynnika grupuj±cego
   int<lower=1> R;
   row_vector[R] Z[N];
+  //#
   real y[N];
+  //@
   int<lower=1> I;
   int<lower=1, upper=I> id[N];
   // Parametry rozk³adu t dla obserwacji
@@ -59,13 +65,17 @@ model{
     u_ranef[i] ~ chi_square(ranef_nu);
   }
   for(i in 1:N){
+    //#
     y[i] ~ student_t(y_nu, fit[i], y_sigma);
+    //@
   }
 }
 
 generated quantities {
   vector[N] y_new;
   for(i in 1:N){
+    //#
     y_new[i] = student_t_rng(y_nu, fit[i], y_sigma);
+    //@
   }
 }

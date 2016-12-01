@@ -2,10 +2,7 @@
 // efektami losowymi o wielowymiarowym rozk³adzie t. Wielowymiarowy
 // rozk³ad t zaimplementowany wed³ug opisu z Wikipedii, wielowymiarowy
 // normalny zamodelowany wed³ug artyku³u o modelach mieszanych w
-// Stan-ie.
-
-// Elementy modelu specyficzne dla wersji logistycznej s± oznaczone
-// tagami //#<n>
+// Stan-ie. (Manuskrypt jest w podkatalogu stan_models).
 
 data{
   // Wymiary macierzy efektów ustalonych
@@ -17,7 +14,10 @@ data{
   row_vector[R] Z[N];
   int<lower=1> I;
   int<lower=1, upper=I> id[N];
+  //#
   int<lower=0> y[N];
+  //@
+  //
   // Efekty losowe
   real<lower=1> ranef_nu; // Liczba stopni swobody rozk³adu efektów losowych, domy¶lnie 4
   // real<lower=0> ranef_nu_rate; // parametr prioru exp dla nu efektów losowych
@@ -28,16 +28,14 @@ data{
   // real<lower=0> residuals_nu_rate; // parametr prioru exp dla nu reszt
   real<lower=0> y_sigma; // Domy¶lnie 1.548435, ¿eby wspó³czynniki odpowiada³y probitowi
   // Liczba obserwacji na punkt danych
-  //#1
+  //#
   int<lower=0> n[N];
-  //#1
+  //@
 }
 
 parameters{
   vector[D] beta; // Efekty ustalone
-  // real<lower=1> y_nu;
   vector<lower=0>[R] ranef_sigma; // sd efektów losowych
-  // real<lower=1>[R] ranef_nu; // nu efektów losowych
   // Parametryzacja skorelowanych efektów losowych
   cholesky_factor_corr[R] L;
   vector[R] z_ranef[I];
@@ -48,19 +46,20 @@ transformed parameters{
   vector[R] ranef[I];
   // Macierz korelacji
   matrix[R, R] C;
+  //#
+  //
   // Warto¶æ oczekiwania zmiennej zale¿nej
   vector[N] eta;
+  //@
   for(i in 1:I){
     // Efekty losowe maj± rozk³ad t ze ¶redni± 0
     ranef[i] = sqrt(ranef_nu / u_ranef[i]) * diag_pre_multiply(ranef_sigma, L) * z_ranef[i];
   }
   C = L * L';
   for(i in 1:N){
-    // Odporna regresja logistyczna
-    //
-    //#2
+    //#
     eta[i] = student_t_cdf(X[i] * beta + Z[i] * ranef[id[i]], y_nu, 0, y_sigma);
-    //#2
+    //@
   }
 }
 
@@ -72,9 +71,9 @@ model{
     u_ranef[i] ~ chi_square(ranef_nu);
   }
   for(i in 1:N){
-    //#3
+    //#
     y[i] ~ binomial(n[i], eta[i]);
-    //#3
+    //@
   }
 }
 
@@ -82,9 +81,9 @@ model{
 generated quantities {
   vector[N] y_new;
   for(i in 1:N){
-    //#4
+    //#
     y_new[i] = binomial_rng(n[i], eta[i]);
-    //#4
+    //@
   }
 }
 
