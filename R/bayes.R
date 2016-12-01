@@ -1,3 +1,83 @@
+robust_mixed_model = "
+data{
+  // Macierz efektów ustalonych
+  int<lower=1> D;
+  int<lower=1> N;
+  row_vector[D] X[N];
+  // Macierz efektów losowych, R to liczba efektów, I to liczba
+  // poziomów czynnika grupującego
+  int<lower=1> R;
+  row_vector[R] Z[N];
+  int<lower=1> I;
+  int<lower=1, upper=I> id[N];
+  // Efekty losowe
+  real<lower=1> ranef_nu; // domyślnie 4
+  // Prior dla efektów ustalonych, duża liczba
+  real beta_mu[D];
+  real<lower=0> beta_sigma[D];
+  Y_DATA real y[N]; Y_DATA
+  Y_SIGMA_DATA real<lower=0> y_sigma; // domyślnie 1.548435 w robit Y_SIGMA_DATA
+  // nu danych najniższego rzędu
+  Y_NU_DATA real<lower=0> y_nu_rate; Y_NU_DATA
+  N_DATA int<lower=0> n[N]; N_DATA
+}
+parameters{
+  vector[D] beta;
+  vector<lower=0>[R] ranef_sigma;
+  cholesky_factor_corr[R] L;
+  // Używane do modelowania efektów losowych
+  vector[R] z_ranef[I];
+  vector<lower=0>[I] u_ranef;
+  Y_PARAMETERS real<lower=1> y_nu; Y_PARAMETERS
+  Y_SIGMA_PARAMETERS real<lower=0> y_sigma; Y_SIGMA_PARAMETERS
+}
+transformed parameters{
+  Y_NU_TRANSFORMED real<lower=0> y_nu_minus_one; y_nu_minus_one = y_nu - 1; Y_NU_TRANSFORMED
+  vector[R] ranef[I];
+  // Macierz korelacji
+  matrix[R, R] C;
+  vector[N] eta;
+  for(i in 1:I){
+    // Efekty losowe mają rozkład t ze średnią 0
+    ranef[i] = sqrt(ranef_nu / u_ranef[i]) * diag_pre_multiply(ranef_sigma, L) * z_ranef[i];
+  }
+  C = L * L';
+  // Liczymy w ten sposób, bo ponownie używamy tej wartości do
+  // próbkowania predykcji
+  for(i in 1:N){
+    eta[i] = X[i] * beta + Z[i] * ranef[id[i]];
+  }
+}
+model{
+  for(i in 1:D){
+    beta[i] ~ normal(beta_mu[i], beta_sigma[i]);
+  }
+  Y_NU_MODEL y_nu_minus_one ~ exponential(y_nu_rate); Y_NU_MODEL
+  L ~ lkj_corr_cholesky(2.0); 
+  for(i in 1:I){
+    z_ranef[i] ~ normal(0, 1);
+    u_ranef[i] ~ chi_square(ranef_nu);
+  }
+  for(i in 1:N){
+    Y_MODEL y[i] ~ student_t(y_nu, eta[i], y_sigma); Y_MODEL
+  }
+}
+generated quantities {
+  vector[N] y_new;
+  for(i in 1:N){
+    Y_NEW_GENERATED y_new[i] = student_t_rng(y_nu, eta[i], y_sigma); Y_NEW_GENERATED
+  }
+}
+"
+
+## Zmieniamy wartość fragmentów modelu na podstawie listy POLE =
+## 'wartość'
+set = function(fields){
+    res = robust_mixed_model
+    for(f in names(fields))res = gsub(sprintf('%s .+ %s', f, f), fields[[f]], res)
+    res
+}
+
 #' Dopasowuje odporny mieszany model liniowy lub logistyczny
 #'
 #' Implementacja modelu jest oparta na publikacji Sorensen'a,
@@ -38,15 +118,20 @@
 #'     s: ramka próbek, summary: podsumowanie wyników STAN'a.
 #' @export
 robust_mixed = function(fixed, random, d, n = NULL,
-                        y_nu = 4, y_sigma = 1.548435,
-                        beta_sigma = NULL, ranef_nu = 4,
+                        y_nu_rate = 1/29, y_nu = 4, y_sigma = 1.548435,
+                        beta_mu = 0, beta_sigma = NULL,
+                        ranef_nu = 4,
                         chains = parallel::detectCores() - 1,
                         pars = NULL, family = 'binomial',
                         return_stanfit = F, ...){
     require(rstan)
     if(family == 'binomial'){
         if(is.null(n))stop("Number of observations per data point (n) missing.")
-        model.path = 'stan_models/robust_mixed_logistic.stan'
+        if(is.numeric(y_nu_rate)){
+            model.path = 'stan_models/robust_mixed_logistic_y_nu.stan'
+        }else{
+            model.path = 'stan_models/robust_mixed_logistic.stan'
+        }
         if(is.null(beta_sigma)){
             warning('Using defaulf SD=20 for fixed effects priors. This could be inappropriate for unstandardized predictors.')
             beta_sigma = 20
@@ -55,28 +140,51 @@ robust_mixed = function(fixed, random, d, n = NULL,
     if(family == 'normal'){
         if(beta_sigma == 20)warning('SD of normal prior for beta = 20 in the linear model')
         if(is.null(beta_sigma))stop('beta_sigma (SD of fixed effects priors) not set')
-        model.path = 'stan_models/robust_mixed_linear.stan'
+        if(is.numeric(y_nu_rate)){
+            model.path = 'stan_models/robust_mixed_linear_y_nu.stan'
+        }else{
+            model.path = 'stan_models/robust_mixed_linear.stan'
+        }
     }
     if(!all(pars %in% c('ranef', 'y_new'))){
         error('Wrong parameter names. Valid values are \'ranef\' and \'y_new\'.')
     }
-    pars = c(c('beta', 'ranef_sigma', 'C'), pars)
+    essential.pars = c('beta', 'ranef_sigma', 'C')
+    if(is.numeric(y_nu_rate))essential.pars = c(essential.pars, 'y_nu')
+    pars = c(essential.pars, pars)
     rstan_options(auto_write = TRUE)
     options(mc.cores = parallel::detectCores())
     id = as.numeric(as.factor(as.character(d[[as.character(random[2])]])))
     y = d[,as.character(fixed[2])]
     X = model.matrix(fixed, d)
+    ## Ewentualne rozwinięcie wektora priorów
+    if(length(beta_sigma) < ncol(X)){
+        warning('Using the same SD (beta_sigma[1]) for all fixed effects priors')
+        beta_sigma = rep(beta_sigma[1], ncol(X))
+    }
+    if(length(beta_mu) < ncol(X)){
+        warning('Using the same mu (beta_mu[1]) for all fixed effects priors')
+        beta_mu = rep(beta_mu[1], ncol(X))
+    }
     Z = model.matrix(random, d)
     data = list(D = ncol(X), R = ncol(Z), N = nrow(X), I = max(id),
                 X = X, Z = Z, y = y, id = id,
-                y_nu = y_nu, ranef_nu = ranef_nu,
+                ranef_nu = ranef_nu,
+                beta_mu = beta_mu,
                 beta_sigma = beta_sigma)
+    if(is.numeric(y_nu_rate)){
+        data$y_nu_rate = y_nu_rate
+    }else{
+        data$y_nu = y_nu
+    }
     if(family == 'binomial'){
         d$n = n ## Zapewnia odpowiednią długość, gdy n to skalar
         data$n = d$n
         data$y_sigma = y_sigma
     }
-    fit = stan(paste(path.package('bp'), model.path, sep = '/'), data = data,
+    ## full.model.path = paste(path.package('bp'), model.path, sep = '/')
+    full.model.path = sprintf('/home/borys/cs/code/r/bp/inst/%s', model.path)
+    fit = stan(full.model.path, data = data,
                chains = chains, pars = pars, ...)
     if(!return_stanfit){
         ## Zwracamy próbki z czytelnymi nazwami parametrów

@@ -27,7 +27,7 @@ data{
   // Prior dla efektów ustalonych, du¿a liczba
   real beta_mu[D];
   real<lower=0> beta_sigma[D];
-  // Parametryzacja prioru dla nu funkcji ³±cz±cej
+  // Parametryzacja prioru dla nu danych najni¿szego poziomu
   real<lower=0> y_nu_rate;
 }
 

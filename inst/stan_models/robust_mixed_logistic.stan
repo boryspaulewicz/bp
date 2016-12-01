@@ -22,10 +22,10 @@ data{
   real<lower=1> ranef_nu; // Liczba stopni swobody rozk³adu efektów losowych, domy¶lnie 4
   // real<lower=0> ranef_nu_rate; // parametr prioru exp dla nu efektów losowych
   // Prior dla efektów ustalonych
-  real<lower=0> beta_sigma; // domy¶lnie 20 dla robit, dla stdandardyzowanych predyktorów mo¿na 5
+  real beta_mu[D];
+  real<lower=0> beta_sigma[D]; // domy¶lnie 20 dla robit, dla stdandardyzowanych predyktorów mo¿na 5
   // Parametry rozk³adu t dla obserwacji
   real<lower=1> y_nu; // domy¶lnie 4
-  // real<lower=0> residuals_nu_rate; // parametr prioru exp dla nu reszt
   real<lower=0> y_sigma; // Domy¶lnie 1.548435, ¿eby wspó³czynniki odpowiada³y probitowi
   // Liczba obserwacji na punkt danych
   //#
@@ -64,7 +64,9 @@ transformed parameters{
 }
 
 model{
-  beta ~ normal(0, beta_sigma);
+  for(i in 1:D){
+    beta ~ normal(beta_mu[i], beta_sigma[i]);
+  }
   L ~ lkj_corr_cholesky(2.0); 
   for(i in 1:I){
     z_ranef[i] ~ normal(0, 1);

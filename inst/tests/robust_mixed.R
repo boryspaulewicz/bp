@@ -3,20 +3,26 @@ library(lme4)
 library(ggplot2)
 data(sleepstudy)
 
+source('~/cs/code/r/bp/R/bayes.R')
+
 fit = robust_mixed(Reaction ~ Days, Subject ~ Days, sleepstudy, beta_sigma = 1000, family = 'normal',
                    pars = c('ranef', 'y_new'))
 
 ## Rhat should be <= 1.01, neff >= 1000 for 95% CI
 round(fit$summary, 2)
 
+plot(fit$s$y_nu)
+## Pięknie się próbkuje
+hist(fit$s$y_nu)
+
 m <- lmer(Reaction ~ Days + (Days|Subject), sleepstudy)
 print(summary(m), corr = F)
 
 ## Bardzo podobne współczynniki efektów ustalonych
 round(data.frame(lmer = fixef(m), robust = apply(fit$s[,fit$fixef], 2, mean)), 2)
-##               lmer robust
-## (Intercept) 251.41 252.65
-## Days         10.47  10.75
+              lmer robust
+(Intercept) 251.41 252.67
+Days         10.47  10.74
 
 ranef.1 = data.frame(x = ranef(m)$Subject[,1], y = apply(fit$s[, paste(unique(sleepstudy$Subject), '(Intercept)', sep = '.')], 2, mean))
 ranef.2 = data.frame(x = ranef(m)$Subject[,2], y = apply(fit$s[, paste(unique(sleepstudy$Subject), 'Days', sep = '.')], 2, mean))
@@ -32,14 +38,14 @@ ggplot(ranef.2, aes(x, y)) + geom_point() + geom_smooth(method = 'lm') + geom_te
 tbl = lmer_sig(m, T)
 round(data.frame(lmer = as.numeric(tbl[,3]), robust = apply(fit$s[,fit$fixef], 2, sd)), 2)
 ##             lmer robust
-## (Intercept) 6.82   8.10
-## Days        1.55   1.74
+## (Intercept) 6.82   8.42
+## Days        1.55   1.73
 
 ## Większa wariancja efektów losowych z bayesa, korelacja z odwrotnym
 ## znakiem (sic!), ale jest "nieistotna"
-round(apply(fit$s, 2, mean)[c(3:4, 6)], 2)
-## (Intercept) SD        Days SD          C.2.1
-##          27.93           6.04          -0.11
+round(apply(fit$s, 2, mean)[c(3:4, 7)], 2)
+## (Intercept) SD        Days SD          C.2.1 
+##          28.58           6.07          -0.11 
 ##
 ## Random effects:
 ##  Groups   Name        Std.Dev. Corr
@@ -70,7 +76,7 @@ df$gr = as.factor(df$gr)
 
 ## nu = 30, żeby przybliżyć zwykłą mieszaną regresję logistyczną
 fit = robust_mixed(acc ~ -1 + gr / x, id ~ x, df, n = 20, family = 'binomial',
-                   pars = 'y_new', y_nu = 30, ranef_nu = 30)
+                   pars = 'y_new', y_nu = 30, ranef_nu = 30, y_nu_rate = F)
 
 ## Rhat <= 1.01, neff >= 1000 for 95% CI
 round(fit$summary, 2)
