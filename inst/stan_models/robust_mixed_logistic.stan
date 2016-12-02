@@ -56,11 +56,9 @@ transformed parameters{
     ranef[i] = sqrt(ranef_nu / u_ranef[i]) * diag_pre_multiply(ranef_sigma, L) * z_ranef[i];
   }
   C = L * L';
-  for(i in 1:N){
-    //#
-    eta[i] = student_t_cdf(X[i] * beta + Z[i] * ranef[id[i]], y_nu, 0, y_sigma);
-    //@
-  }
+  //#
+  for(i in 1:N){ eta[i] = student_t_cdf(X[i] * beta + Z[i] * ranef[id[i]], y_nu, 0, y_sigma); }
+  //@
 }
 
 model{
@@ -72,20 +70,16 @@ model{
     z_ranef[i] ~ normal(0, 1);
     u_ranef[i] ~ chi_square(ranef_nu);
   }
-  for(i in 1:N){
-    //#
-    y[i] ~ binomial(n[i], eta[i]);
-    //@
-  }
+  //#
+  for(i in 1:N){ y[i] ~ binomial(n[i], eta[i]); }
+  //@
 }
 
 // Posterior predykcyjny
 generated quantities {
   vector[N] y_new;
-  for(i in 1:N){
-    //#
-    y_new[i] = binomial_rng(n[i], eta[i]);
-    //@
-  }
+  //#
+  for(i in 1:N){ y_new[i] = binomial_rng(n[i], eta[i]); }
+  //@
 }
 

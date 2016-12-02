@@ -4,9 +4,10 @@
 \alias{robust_mixed}
 \title{Dopasowuje odporny mieszany model liniowy lub logistyczny}
 \usage{
-robust_mixed(fixed, random, d, n = NULL, y_nu = 4, y_sigma = 1.548435,
-  beta_sigma = NULL, ranef_nu = 4, chains = parallel::detectCores() - 1,
-  pars = NULL, family = "binomial", return_stanfit = F, ...)
+robust_mixed(fixed, random, d, n = NULL, y_nu_rate = 1/29, y_nu = 4,
+  y_sigma = 1.548435, beta_mu = 0, beta_sigma = NULL, ranef_nu = 4,
+  chains = parallel::detectCores() - 1, pars = NULL, type = "robit",
+  auto_write = TRUE, return_stanfit = F, ...)
 }
 \arguments{
 \item{fixed}{Formuła modelu dla efektów ustalonych.}
@@ -43,12 +44,12 @@ rdzeni.}
 próbki, poza beta, ranef_sigma i C. Może zawierać 'y_new'
 (posterior predykcyjny) i 'ranef' (efekty losowe).}
 
+\item{return_stanfit}{(=F) Czy zwracać obiekt zwracany przez Stana,
+czy listę z ramką z próbkami i summary}
+
 \item{family}{(='binomial') Rozkład zmiennej zależnej: binomial
 oznacza odporną regresję logistyczną, normal oznacza odporny
 model liniowy.}
-
-\item{return_stanfit}{(=F) Czy zwracać obiekt zwracany przez Stana,
-czy listę z ramką z próbkami i summary}
 }
 \value{
 Obiekt zwracany przez rstan lub lista złożona z elementów

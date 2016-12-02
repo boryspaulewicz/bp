@@ -3,9 +3,10 @@ library(lme4)
 library(ggplot2)
 data(sleepstudy)
 
+## Testujemy zwykle najbardziej aktualną wersję
 source('~/cs/code/r/bp/R/bayes.R')
 
-fit = robust_mixed(Reaction ~ Days, Subject ~ Days, sleepstudy, beta_sigma = 1000, family = 'normal',
+fit = robust_mixed(Reaction ~ Days, Subject ~ Days, sleepstudy, beta_sigma = 1000, type = 'student',
                    pars = c('ranef', 'y_new'))
 
 ## Rhat should be <= 1.01, neff >= 1000 for 95% CI
@@ -59,35 +60,3 @@ ggplot(cbind(sleepstudy, y_new), aes(x = Days, y = Reaction)) + geom_point() +
     geom_line(color = 'red', aes(y = fitted(m))) + geom_line(aes(y = y)) +
     geom_ribbon(aes(ymin = lo, ymax = hi), alpha = .1) + facet_wrap(~Subject)
 ## Pięknie olewa obserwacje odstające: 308, 332, 335, 352
-
-######################################################################
-## Robit
-
-df = expand.grid(id = 1:40, trial = 1, x = 0:1)
-df$gr = 1
-df$gr[df$id > 20] = 2
-df$acc = NA
-x.eff = ct(rnorm(max(df$id), sd = 1))
-intercept.eff = ct(rnorm(max(df$id), sd = 0.5))
-n = 20
-for(i in 1:nrow(df))df$acc[i] = rbinom(1, size = n, binomial()$linkinv(c(-.5, .5)[df$gr[i]] + intercept.eff[df$id[i]] +
-                                                                             (df$gr[i] + x.eff[df$id[i]]) * df$x[i]))
-df$gr = as.factor(df$gr)
-
-## nu = 30, żeby przybliżyć zwykłą mieszaną regresję logistyczną
-fit = robust_mixed(acc ~ -1 + gr / x, id ~ x, df, n = 20, family = 'binomial',
-                   pars = 'y_new', y_nu = 30, ranef_nu = 30, y_nu_rate = F)
-
-## Rhat <= 1.01, neff >= 1000 for 95% CI
-round(fit$summary, 2)
-
-## Porównujemy efekty ustalone z wartościami prawdziwymi
-round(rbind(apply(fit$s[,fit$fixef], 2, mean), c(-.5, .5, 1, 2)), 2)
-
-## Współczynniki bardzo podobne
-m <- glmer(cbind(acc,n-acc) ~ -1 + gr / x + (x|id), df, family = 'binomial')
-round(rbind(coef(summary(m))[fit$fixef, 1],
-            apply(fit$s[,fit$fixef], 2, mean)), 2)
-
-## Błędy standardowe bardzo podobne
-round(coef(summary(m))[fit$fixef, 2] / apply(fit$s[,fit$fixef], 2, sd), 2)
