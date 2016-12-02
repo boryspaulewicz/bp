@@ -4,7 +4,7 @@
 \alias{robust_mixed}
 \title{Dopasowuje odporny mieszany model liniowy lub logistyczny}
 \usage{
-robust_mixed(fixed, random, d, n = NULL, y_nu_rate = 1/29, y_nu = 4,
+robust_mixed(fixed, random, d, n = NULL, y_nu_rate = NULL, y_nu = NULL,
   y_sigma = 1.548435, beta_mu = 0, beta_sigma = NULL, ranef_nu = 4,
   chains = parallel::detectCores() - 1, pars = NULL, type = "robit",
   auto_write = TRUE, return_stanfit = F, ...)
@@ -19,8 +19,11 @@ x2 ...}
 
 \item{n}{Liczba obserwacji na punkt danych (robit)}
 
-\item{y_nu}{Liczba stopni swobody rozkładu t modelującego zmienną
-zależną.}
+\item{y_nu_rate}{Parametr prioru dla liczby stopni swobody rozkładu
+zmiennej zależnej. Nie można ustawiać jednocześnie z y_nu}
+
+\item{y_nu}{Ustalona liczba stopni swobody rozkładu zmiennej
+zależnej. Nie można ustawiać jednocześnie z y_nu_rate.}
 
 \item{y_sigma}{(Uwzględniane tylko dla modelu logistycznego)
 Odchylenie standardowe rozkładu t modelującego zmienną
@@ -28,38 +31,45 @@ zależną. To jest wartość arbitralna - domyślnie przyjęto
 wartość dającą współczynniki porównywalne do zwykłej regresji
 logistycznej.}
 
-\item{beta_sigma}{Odchylenie standardowe prioru dla efektów
-ustalonych. UWAGA Jeżeli predyktory mają bardzo małe odchylenie
-standardowe, albo oczekiwane prawdopodobieństwa dla punktów
-przecięcia są skrajne, domyślna wartość może być
-nieodpowiednia.}
+\item{beta_mu}{Skalar lub wektor (długości równej liczbie efektów
+ustalonych) określający średnią/e prioru normalnego dla efektów
+ustalonych.}
 
-\item{ranef_nu}{Liczba stopni swobody rozkładu t modelującego
-rozkład efektów losowych.}
+\item{beta_sigma}{Skalar lub wektor (długości równej liczbie
+efektów ustalonych) określający odchylenie standardowe prioru
+dla efektów ustalonych. W robit domyślnie 20, co daje słabo
+informacyjny prior przy założeniu, że predyktory są binarne lub
+mają odchylenie standardowe bliskie 1.}
 
-\item{chains}{Liczba równoległych próbników - domyślnie liczba
-rdzeni.}
+\item{ranef_nu}{Liczba stopni swobody rozkładu efektów losowych.}
+
+\item{chains}{Liczba równoległych próbników. Domyślnie liczba
+rdzeni - 1.}
 
 \item{pars}{Wektor tekstowy nazw parametrów, dla których chcemy
-próbki, poza beta, ranef_sigma i C. Może zawierać 'y_new'
-(posterior predykcyjny) i 'ranef' (efekty losowe).}
+próbki, poza automatycznie uwzględnianymi beta, ranef_sigma, C
+i y_nu, jeżeli y_nu_rate jest ustalone. Dopuszczalne wartości
+to 'y_new' (posterior predykcyjny) i 'ranef' (efekty losowe).}
+
+\item{type}{[student/robit] Określa rozkład zmiennej zależnej.  Typ
+robit to rozkład dwumianowy z funkcją łączącą równą
+dystrybuancie rozkładu t. Typ student to rozkład t.}
+
+\item{auto_write}{Parametr przekazywany do funkcji stan.}
 
 \item{return_stanfit}{(=F) Czy zwracać obiekt zwracany przez Stana,
 czy listę z ramką z próbkami i summary}
-
-\item{family}{(='binomial') Rozkład zmiennej zależnej: binomial
-oznacza odporną regresję logistyczną, normal oznacza odporny
-model liniowy.}
 }
 \value{
-Obiekt zwracany przez rstan lub lista złożona z elementów
-    s: ramka próbek, summary: podsumowanie wyników STAN'a.
+Obiekt zwracany przez rstan (gdy return_stanfit = T) lub
+    lista złożona z elementów s: ramka próbek o nazwach
+    odpowiadających nazwom efektów w modelu, summary: podsumowanie
+    wyników próbkowania zwracane przez STAN'a.
 }
 \description{
 Implementacja modelu jest oparta na publikacji Sorensen'a,
 Hohenstain'a i Vasishth'a (2015): Bayesian linear mixed models
 using Stan: A tutorial for psychologists, linguists, and cognitive
-scientists. Warto pamiętać, że prior dla efektów ustalonych nie
-jest płaski (domyślnie beta_sigma = sd prioru normalnego == 20).
+scientists.
 }
 
