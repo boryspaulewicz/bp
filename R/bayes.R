@@ -59,7 +59,8 @@ generated quantities {
 ## Zmieniamy wartość fragmentów modelu na podstawie listy POLE =
 ## 'wartość'
 set = function(fields){
-    res = robust_mixed_model
+    res = paste(readLines(paste(path.package('bp'), '/stan_models/robust_mixed.stan', sep = ''), encoding = 'utf8'),
+                collapse = '\n')
     for(f in names(fields))res = gsub(sprintf('// %s', f), fields[[f]], res)
     res
 }
