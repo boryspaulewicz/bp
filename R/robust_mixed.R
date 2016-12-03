@@ -61,7 +61,11 @@ create_model = function(type, y_nu_free){
 #'     dla efektów ustalonych. W robit domyślnie 20, co daje słabo
 #'     informacyjny prior przy założeniu, że predyktory są binarne lub
 #'     mają odchylenie standardowe bliskie 1.
-#' @param ranef_nu Liczba stopni swobody rozkładu efektów losowych.
+#' @param ranef_nu Liczba stopni swobody (nu) rozkładu efektów
+#'     losowych. Nie można podawać jednocześnie z ranef_nu_rate.
+#' @param ranef_nu_rate Parametr prioru nu dla efektów
+#'     losowych. Skalar albo wektor o długości równej liczbie efektów
+#'     losowych. Nie można podawać jednocześnie z ranef_nu.
 #' @param chains Liczba równoległych próbników. Domyślnie liczba
 #'     rdzeni - 1.
 #' @param pars Wektor tekstowy nazw parametrów, dla których chcemy
@@ -82,7 +86,7 @@ create_model = function(type, y_nu_free){
 robust_mixed = function(fixed, random, d, n = NULL,
                         y_nu_rate = NULL, y_nu = NULL, y_sigma = 1.548435,
                         beta_mu = 0, beta_sigma = NULL,
-                        ranef_nu = 4,
+                        ranef_nu = 4, ranef_nu_rate = NULL,
                         chains = parallel::detectCores() - 1,
                         pars = NULL, type = 'robit',
                         auto_write = TRUE,
@@ -124,7 +128,7 @@ robust_mixed = function(fixed, random, d, n = NULL,
 
     ## Przygotowujemy dane
     id = as.numeric(as.factor(as.character(d[[as.character(random[2])]])))
-    y = d[,as.character(fixed[2])]
+    y = d[, as.character(fixed[2])]
     X = model.matrix(fixed, d)
 
     ## Ewentualne rozwinięcie wektora priorów
