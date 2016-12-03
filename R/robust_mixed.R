@@ -33,19 +33,11 @@ create_model = function(type, y_nu_rate, ranef_nu_rate){
     }
 
     if(is.numeric(ranef_nu_rate)){
-        if(length(ranef_nu_rate) > 1){
-            model$DATA = paste(model$DATA, 'real<lower=0> ranef_nu_rate[R];\n')
-            model$PARAMETERS = paste(model$PARAMETERS, 'vector<lower=1>[R] ranef_nu;\n')
-            model$TRANSF_DECL = paste(model$TRANSF_DECL, 'real<lower=0> ranef_nu_minus_one[R];\n ')
-            model$TRANSFORMED = paste(model$TRANSFORMED, 'for(i in 1:R){ ranef_nu_minus_one[i] = ranef_nu[i] - 1; }\n')
-            model$MODEL = paste(model$MODEL, 'for(i in 1:R){ ranef_nu_minus_one[i] ~ exponential(ranef_nu_rate[i]); }\n')
-        }else{
-            model$DATA = paste(model$DATA, 'real<lower=0> ranef_nu_rate;\n')
-            model$PARAMETERS = paste(model$PARAMETERS, 'real<lower=1> ranef_nu;\n')
-            model$TRANSF_DECL = paste(model$TRANSF_DECL, 'real<lower=0> ranef_nu_minus_one;\n ')
-            model$TRANSFORMED = paste(model$TRANSFORMED, 'ranef_nu_minus_one = ranef_nu - 1;\n')
-            model$MODEL = paste(model$MODEL, 'ranef_nu_minus_one ~ exponential(ranef_nu_rate);\n')
-        }
+        model$DATA = paste(model$DATA, 'real<lower=0> ranef_nu_rate;\n')
+        model$PARAMETERS = paste(model$PARAMETERS, 'real<lower=1> ranef_nu;\n')
+        model$TRANSF_DECL = paste(model$TRANSF_DECL, 'real<lower=0> ranef_nu_minus_one;\n ')
+        model$TRANSFORMED = paste(model$TRANSFORMED, 'ranef_nu_minus_one = ranef_nu - 1;\n')
+        model$MODEL = paste(model$MODEL, 'ranef_nu_minus_one ~ exponential(ranef_nu_rate);\n')
     }else{
         model$DATA = paste(model$DATA, 'real<lower=1> ranef_nu;\n')
     }
@@ -82,9 +74,8 @@ create_model = function(type, y_nu_rate, ranef_nu_rate){
 #'     dla efektów ustalonych. W robit domyślnie 20, co daje słabo
 #'     informacyjny prior przy założeniu, że predyktory są binarne lub
 #'     mają odchylenie standardowe bliskie 1.
-#' @param ranef_nu_rate Parametr prioru nu dla efektów
-#'     losowych. Skalar albo wektor o długości równej liczbie efektów
-#'     losowych. Jeżeli określony, to nu dla efektów losowych będzie
+#' @param ranef_nu_rate Parametr prioru nu dla efektów losowych
+#'     (skalar). Jeżeli określony, to nu dla efektów losowych będzie
 #'     wolnym parametrem, a ranef_nu będzie zignorowany.
 #' @param ranef_nu Liczba stopni swobody (nu) rozkładu efektów
 #'     losowych. Nie można podawać jednocześnie z ranef_nu_rate.
@@ -169,10 +160,6 @@ robust_mixed = function(fixed, random, d, n = NULL,
         warning('Using the same mu (beta_mu[1]) for all fixed effects priors')
         beta_mu = rep(beta_mu[1], ncol(X))
     }
-    if(length(ranef_nu_rate) > 1)stop('More than one free nu parameter for random effects not implemented yet.')
-    ## if(!any(length(ranef_nu_rate) == c(0, 1, ncol(Z)))){
-    ##     stop('ranef_nu_rate is longer than 1 but shorter than the number of random effects')
-    ## }
     
     data = list(D = ncol(X), R = ncol(Z), N = nrow(X), I = max(id),
                 X = X, Z = Z, y = y, id = id,
