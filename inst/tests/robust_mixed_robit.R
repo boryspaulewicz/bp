@@ -13,22 +13,21 @@ for(i in 1:nrow(df))df$acc[i] = rbinom(1, size = n, binomial()$linkinv(c(-.5, .5
 df$gr = as.factor(df$gr)
 
 ## Testujemy zwykle najbardziej aktualną wersję
-source('~/cs/code/r/bp/R/bayes.R')
+source('~/cs/code/r/bp/R/robust_mixed.R')
 
 ## nu = 30, żeby przybliżyć zwykłą mieszaną regresję logistyczną
 fit = robust_mixed(acc ~ -1 + gr / x, id ~ x, df, n = 20, type = 'robit',
                    pars = 'y_new', y_nu = 30, ranef_nu = 30)
 
-## Rhat <= 1.01, neff >= 1000 for 95% CI
 round(fit$summary, 2)
 
 ## Porównujemy efekty ustalone z wartościami prawdziwymi
-round(rbind(apply(fit$s[,fit$fixef], 2, mean), c(-.5, .5, 1, 2)), 2)
+round(rbind(apply(fit$samples[,fit$fixef], 2, mean), c(-.5, .5, 1, 2)), 2)
 
 ## Współczynniki bardzo podobne
 m <- glmer(cbind(acc,n-acc) ~ -1 + gr / x + (x|id), df, family = 'binomial')
 round(rbind(coef(summary(m))[fit$fixef, 1],
-            apply(fit$s[,fit$fixef], 2, mean)), 2)
+            apply(fit$samples[,fit$fixef], 2, mean)), 2)
 
 ## Błędy standardowe bardzo podobne
-round(coef(summary(m))[fit$fixef, 2] / apply(fit$s[,fit$fixef], 2, sd), 2)
+round(coef(summary(m))[fit$fixef, 2] / apply(fit$samples[,fit$fixef], 2, sd), 2)

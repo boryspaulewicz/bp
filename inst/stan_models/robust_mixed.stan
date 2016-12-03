@@ -18,8 +18,6 @@ data{
   row_vector[R] Z[N];
   int<lower=1> I;
   int<lower=1, upper=I> id[N];
-  // Efekty losowe
-  real<lower=1> ranef_nu; // domy¶lnie 4
   // Prior dla efektów ustalonych
   real beta_mu[D];
   real<lower=0> beta_sigma[D];
@@ -35,17 +33,15 @@ parameters{
   vector<lower=0>[I] u_ranef;
   // PARAMETERS
 }
+
 transformed parameters{
   // TRANSF_DECL
   vector[R] ranef[I];
   // Macierz korelacji
   matrix[R, R] C;
   vector[N] eta;
-  for(i in 1:I){
-    // Efekty losowe maj± rozk³ad t ze ¶redni± 0, co uzyskujemy mno¿±c
-    // zmienn± losow± normaln± przez sqrt(nu / v ~ chiqs(nu)).
-    ranef[i] = sqrt(ranef_nu / u_ranef[i]) * diag_pre_multiply(ranef_sigma, L) * z_ranef[i];
-  }
+  // Tak mo¿na zaimplementowaæ wielowymiarowy rozk³ad t
+  for(i in 1:I){ ranef[i] = sqrt(ranef_nu / u_ranef[i]) * diag_pre_multiply(ranef_sigma, L) * z_ranef[i]; }
   C = L * L';
   // TRANSFORMED
 }

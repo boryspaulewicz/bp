@@ -4,27 +4,29 @@ library(ggplot2)
 data(sleepstudy)
 
 ## Testujemy zwykle najbardziej aktualną wersję
-source('~/cs/code/r/bp/R/bayes.R')
+source('~/cs/code/r/bp/R/robust_mixed.R')
 
 fit = robust_mixed(Reaction ~ Days, Subject ~ Days, sleepstudy, beta_sigma = 1000, type = 'student',
-                   pars = c('ranef', 'y_new'), y_nu_rate = 1/29)
+                   pars = c('ranef', 'y_new'), y_nu_rate = 1/29, ranef_nu_rate = 1/29)
 
-## Rhat should be <= 1.01, neff >= 1000 for 95% CI
 round(fit$summary, 2)
+## ranef_nu próbkuje się znacznie gorzej, niż pozostałe parametry i
+## nic dziwnego (mało osób badanych, ciężar ogonów odpowiada rzadkim i
+## odległym obserwacjom). Ponieważ jego średnia posterioryczna > 30,
+## można założyć, że efekty losowe mają rozkład normalny.
 
-plot(fit$s$y_nu)
-## Pięknie się próbkuje
-hist(fit$s$y_nu)
+fit$summary[fit$ranef, 'mean'] / apply(fit$samples[,fit$ranef], 2, mean)
+## Nazwy efektów losowych w ramce próbek i summary są zgodne.
 
 m <- lmer(Reaction ~ Days + (Days|Subject), sleepstudy)
 print(summary(m), corr = F)
 
 ## Bardzo podobne współczynniki efektów ustalonych
-round(data.frame(lmer = fixef(m), robust = apply(fit$s[,fit$fixef], 2, mean)), 2)
+round(data.frame(lmer = fixef(m), robust = apply(fit$samples[,fit$fixef], 2, mean)), 2)
 
 ## Porównujemy efekty losowe z lmer i robit
-ranef.1 = data.frame(x = ranef(m)$Subject[,1], y = apply(fit$s[, paste(unique(sleepstudy$Subject), '(Intercept)', sep = '.')], 2, mean))
-ranef.2 = data.frame(x = ranef(m)$Subject[,2], y = apply(fit$s[, paste(unique(sleepstudy$Subject), 'Days', sep = '.')], 2, mean))
+ranef.1 = data.frame(x = ranef(m)$Subject[,1], y = apply(fit$samples[, paste(unique(sleepstudy$Subject), '(Intercept)', sep = '.')], 2, mean))
+ranef.2 = data.frame(x = ranef(m)$Subject[,2], y = apply(fit$samples[, paste(unique(sleepstudy$Subject), 'Days', sep = '.')], 2, mean))
 lm(y ~ x, ranef.1)
 lm(y ~ x, ranef.2)
 ## Nachylenia bliskie 1, ale widać odstające przypadki
@@ -35,18 +37,18 @@ ggplot(ranef.2, aes(x, y)) + geom_point() + geom_smooth(method = 'lm') + geom_te
 
 ## Większy poziom niepewności z bayesa
 tbl = lmer_sig(m, T)
-round(data.frame(lmer = as.numeric(tbl[,3]), robust = apply(fit$s[,fit$fixef], 2, sd)), 2)
+round(data.frame(lmer = as.numeric(tbl[,3]), robust = apply(fit$samples[,fit$fixef], 2, sd)), 2)
 
 ## Większa wariancja efektów losowych z bayesa, korelacja z odwrotnym
 ## znakiem (sic!), ale jest "nieistotna"
-round(apply(fit$s, 2, mean)[c(3:4, 7)], 2)
+round(apply(fit$samples, 2, mean)[c(3:4, 7)], 2)
 ## Random effects:
 ##  Groups   Name        Std.Dev. Corr
 ##  Subject  (Intercept) 24.740
 ##           Days         5.922   0.07
 
 ## Dopasowanie na podstawie posteriora predykcyjnego
-y_new = t(apply(fit$s[,rmatch('y_new', names(fit$s))], 2, function(x)c(quantile(x, .025), mean(x), quantile(x, .975))))
+y_new = t(apply(fit$samples[,rmatch('y_new', names(fit$samples))], 2, function(x)c(quantile(x, .025), mean(x), quantile(x, .975))))
 colnames(y_new) = c('lo', 'y', 'hi')
 ggplot(cbind(sleepstudy, y_new), aes(x = Days, y = Reaction)) + geom_point() +
     geom_line(color = 'red', aes(y = fitted(m))) + geom_line(aes(y = y)) +
