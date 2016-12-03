@@ -40,7 +40,8 @@ transformed parameters{
   // Macierz korelacji
   matrix[R, R] C;
   vector[N] eta;
-  // Tak mo¿na zaimplementowaæ wielowymiarowy rozk³ad t
+  // Tak mo¿na zaimplementowaæ wielowymiarowy rozk³ad t - patrz:
+  // https://en.wikipedia.org/wiki/Multivariate_t-distribution
   for(i in 1:I){ ranef[i] = sqrt(ranef_nu / u_ranef[i]) * diag_pre_multiply(ranef_sigma, L) * z_ranef[i]; }
   C = L * L';
   // TRANSFORMED

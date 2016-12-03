@@ -96,7 +96,12 @@ create_model = function(type, y_nu_rate, ranef_nu_rate){
 #'     odpowiadających nazwom efektów w modelu, summary: podsumowanie
 #'     wyników próbkowania zwracane przez STAN'a, ranef: wektor nazw
 #'     efektów losowych, fixef: wektor nazw efektów ustalonych, model:
-#'     kod dopasowanego modelu.
+#'     kod dopasowanego modelu, fixed_formula: formuła modelu dla
+#'     efektów ustalonych, random_formula: formuła modelu dla efektów
+#'     losowych, X: macierz modelu efektów ustalonych, Z: macierz
+#'     modelu efektów losowych, id: wektor całkowitoliczbowy
+#'     reprezentujący poziom czynnika losowego, idnames: nazwy
+#'     poziomów czynnika losowego.
 #' @export
 robust_mixed = function(fixed, random, d, n = NULL,
                         y_nu_rate = NULL, y_nu = 4,
@@ -208,7 +213,8 @@ robust_mixed = function(fixed, random, d, n = NULL,
         if('ranef' %in% pars)rownames(stan.sum)[rmatch('ranef\\[', rownames(stan.sum))] =
                                 apply(expand.grid(colnames(Z), idnames), 1, function(x)paste(rev(x), collapse = '.'))
         list(samples = s, summary = as.data.frame(stan.sum), ranef = ranef_names, fixef = colnames(X),
-             model = model)
+             model = model, fixed_formula = fixed, random_formula = random,
+             X = X, Z = Z, id = id, idnames = idnames)
     }else{
         fit
     }
