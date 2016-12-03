@@ -88,10 +88,12 @@ robust_mixed = function(fixed, random, d, n = NULL,
                         auto_write = TRUE,
                         return_stanfit = F, ...){
     require(rstan)
+    ## Sprawdzamy poprawność wektora parametrów monitorowanych
     if(!all(pars %in% c('ranef', 'y_new'))){
         stop('Wrong parameter names. Valid values are \'ranef\' and \'y_new\'.')
     }
     if((is.null(y_nu_rate) & is.null(y_nu)) | (is.numeric(y_nu_rate) & is.numeric(y_nu)))stop('Provide either y_nu_rate or y_nu.')
+
     ## Sprawdzamy poprawność argumentów ze względu na typ modelu
     if(type == 'robit'){
         if(is.null(n))stop("Number of observations per data point (n) missing.")
@@ -107,6 +109,7 @@ robust_mixed = function(fixed, random, d, n = NULL,
             warning('SD of normal prior for beta = 20 in the linear model')
         }
     }
+
     ## Uzupełniamy wektor parametrów do monitorowania
     essential.pars = c('beta', 'ranef_sigma', 'C')
     if(is.numeric(y_nu_rate)){
@@ -114,13 +117,16 @@ robust_mixed = function(fixed, random, d, n = NULL,
     }else{
         pars = c(essential.pars, pars)
     }
+
     ## Optymalizacja działania STANa
     rstan_options(auto_write = auto_write)
     options(mc.cores = parallel::detectCores())
+
     ## Przygotowujemy dane
     id = as.numeric(as.factor(as.character(d[[as.character(random[2])]])))
     y = d[,as.character(fixed[2])]
     X = model.matrix(fixed, d)
+
     ## Ewentualne rozwinięcie wektora priorów
     if(length(beta_sigma) < ncol(X)){
         warning('Using the same SD (beta_sigma[1]) for all fixed effects priors')
@@ -130,6 +136,8 @@ robust_mixed = function(fixed, random, d, n = NULL,
         warning('Using the same mu (beta_mu[1]) for all fixed effects priors')
         beta_mu = rep(beta_mu[1], ncol(X))
     }
+
+    ## Macierz efektów losowych i lista danych
     Z = model.matrix(random, d)
     data = list(D = ncol(X), R = ncol(Z), N = nrow(X), I = max(id),
                 X = X, Z = Z, y = y, id = id,
@@ -146,6 +154,8 @@ robust_mixed = function(fixed, random, d, n = NULL,
         data$n = d$n
         data$y_sigma = y_sigma
     }
+
+    ## Próbkowanie
     fit = stan(model_code = create_model(type, is.numeric(y_nu_rate)),
                data = data,
                chains = chains, pars = pars, ...)
